@@ -7,7 +7,9 @@ import csv
 import re
 import string
 import pickle
+import random
 from datetime import datetime
+from collections import Counter
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
@@ -69,8 +71,8 @@ def getFeatureList(features):
 	featureList = []
 	for line in features:
 		for word in line[1]:
-			if not word in featureList:
-				featureList.append(word)
+			#if not word in featureList:
+			featureList.append(word)
 	return featureList
 
 def extractFeatures(review):
@@ -80,6 +82,11 @@ def extractFeatures(review):
 		features['contains(%s)' % word] = (word in review_words)
 	return features
 
+def gettime():
+    now = str(datetime.now()).split(".")[0].split()[1]
+    return now
+
+
 if __name__ == "__main__":
 	'''
  	dataset = open('./sentimentdata.csv','wb')
@@ -87,6 +94,8 @@ if __name__ == "__main__":
 	getData('./Data/aclImdb/train/neg/', 'negative', dataset)
 	dataset.close()
 	'''
+
+        print '[%s] starting import sentiment data' % gettime()
 	dataset = open('./sentimentdata.csv', 'rb')
 	csvreader = csv.reader(dataset, quotechar = '|')
 
@@ -95,40 +104,35 @@ if __name__ == "__main__":
 	for row in csvreader:
 		sentiment = row[0]
 		featureVector = getFeatureVector(row[1])
-		#print row[1]
-		#print featureVector
 		featureList.extend(featureVector)
 		reviews.append((featureVector, sentiment))
-	#print reviews
-	#print reviews
 	dataset.close()
+        random.shuffle(reviews)
+        print '[%s] successfully imported %d movie reviews' % (gettime(), len(reviews))
 
 	#result = open('./result.txt', 'wb')
-	model = open('./NBClassifier.pickle', 'wb')
-
-	featureList = list(set(featureList))
+	#model = open('./NBClassifier.pickle', 'wb')
+    
+        wordcounter = Counter(featureList)
+        topwords = wordcounter.most_common(500)
+        featureList = []
+        for word in topwords:
+            featureList.append(word[0])
+        print '[%s] extracted top %d word features' % (gettime(), len(featureList))
+	#featureList = list(set(featureList))
 	tarin_size = len(reviews)*3/4
 	train_set = nltk.classify.util.apply_features(extractFeatures, reviews[:tarin_size])
 	test_set = nltk.classify.util.apply_features(extractFeatures, reviews[tarin_size:])
-	#result.write('')
-	now = str(datetime.now()).split(".")[0].split()[1]
-	print '[',now,'] train on %d instances, test on %d instances' % (len(train_set), len(test_set))
+	print '[%s] start training on %d instances' % (gettime(), len(train_set))
 
 	NBClassifier = nltk.NaiveBayesClassifier.train(train_set)
-	now = str(datetime.now()).split(".")[0].split()[1]
-	print '[',now,'] training complete, start to store classifier model'
-	pickle.dump(NBClassifier, model)
-	model.close()
-	#test_review = 'Bromwell High is a cartoon comedy. It ran at the same time as some other programs about school life, such as "Teachers". My 35 years in the teaching profession lead me to believe that Bromwell Highs satire is much closer to reality than is "Teachers". The scramble to survive financially, the insightful students who can see right through their pathetic teachers pomp, the pettiness of the whole situation, all remind me of the schools I knew and their students. When I saw the episode in which a student repeatedly tried to burn down the school, I immediately recalled ......... at .......... High. A classic line: INSPECTOR: Im here to sack one of your teachers. STUDENT: Welcome to Bromwell High. I expect that many adults of my age think that Bromwell High is far fetched. What a pity that it isnt!'
-	#test_review = 'Once again Mr. Costner has dragged out a movie for far longer than necessary. Aside from the terrific sea rescue sequences, of which there are very few I just did not care about any of the characters. Most of us have ghosts in the closet, and Costners character are realized early on, and then forgotten until much later, by which time I did not care. The character we should really care about is a very cocky, overconfident Ashton Kutcher. The problem is he comes off as kid who thinks hes better than anyone else around him and shows no signs of a cluttered closet. His only obstacle appears to be winning over Costner. Finally when we are well past the half way point of this stinker, Costner tells us all about Kutchers ghosts. We are told why Kutcher is driven to be the best with no prior inkling or foreshadowing. No magic here, it was all I could do to keep from turning it off an hour in.'
-	#test_review = 'The only good thing about this movie was the shot of Goldie Hawn standing in her little french cut bikini panties and struggling to keep a dozen other depraved women from removing her skimpy little cotton top while she giggled and cooed. Ooooof! Her loins rival those of Nina Hartley. This movie came out when I was fourteen and that shot nearly killed me. Id forgotten about it all tucked away in the naughty Roladex of my mind until seeing it the other day on TV, where they actually blurred her midsection in that scene, good grief, reminding me what a smokin hottie of a woman Goldie Hawn was in the 80s. Kurt Russell must have had a fun life.'
-	#test_review = 'bad sad unfortunately ridiculous dislike hate awkward'
+	print '[%s] training completed' % gettime()
+	#pickle.dump(NBClassifier, model)
+	#model.close()
 	#print NBClassifier.classify(extractFeatures(test_review))
-	#NBClassifier = nltk.NaiveBayesClassifier.train(train_set)
-	now = str(datetime.now()).split(".")[0].split()[1]
-	print '[',now,'] storing complete, start to test classifier model'
+	print '[%s] start testing on %d instances' % (gettime(), len(test_set))
 	print 'accuracy:', nltk.classify.util.accuracy(NBClassifier, test_set)
-	NBClassifier.show_most_informative_features()
+	NBClassifier.show_most_informative_features(5)
 
 
 

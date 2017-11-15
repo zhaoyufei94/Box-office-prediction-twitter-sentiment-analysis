@@ -1,0 +1,6 @@
+*.swp
+*.ipynb
+
+Data/aclImdb/
+Data/review_polarity/
+Data/rt-polaritydata/

@@ -85,6 +85,8 @@ def extractFeatures(review):
 def gettime():
     now = str(datetime.now()).split(".")[0].split()[1]
     return now
+
+
 if __name__ == "__main__":
 	'''
  	dataset = open('./sentimentdata.csv','wb')
