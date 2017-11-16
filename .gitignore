@@ -1,5 +1,6 @@
 *.swp
 *.ipynb
+*.pyc
 
 Data/aclImdb/
 Data/review_polarity/
